@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>排行榜 · 能量豆对战</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23e8b44a'/><circle cx='16' cy='16' r='7' fill='%231c1305'/></svg>">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">豆</span>
+      <span>能量豆对战</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="leaderboard.html" class="on">排行榜</a>
+      <a href="forum.html">讨论区</a>
+    </div>
+    <div class="auth-nav" id="authNav"></div>
+  </div>
+</nav>
+
+<main class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>排行榜</h2>
+      <span class="sub">每位玩家取历史最高分</span>
+    </div>
+
+    <div class="tabs" id="tabs">
+      <button class="on" data-key="all">总榜</button>
+      <button data-key="week">本周</button>
+      <button data-key="today">今日</button>
+    </div>
+
+    <div class="panel">
+      <div class="notice">
+        <span class="tag tag-live">实时</span>
+        <span>只记录真实对局。第一位玩家完成对局后，这里才会出现记录。</span>
+      </div>
+      <table class="board" id="boardTable">
+        <thead>
+          <tr>
+            <th style="width:56px">名次</th>
+            <th>玩家</th>
+            <th style="width:110px">最高分</th>
+            <th style="width:130px">最近对局</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+      <div class="empty" id="boardEmpty" hidden>
+        <div class="empty-glyph">◌</div>
+        <div class="empty-title">榜单还是空的</div>
+        <div class="empty-sub">目前没有任何对局记录。<br>打完第一局，你的名字会出现在这里。</div>
+        <a class="btn btn-primary" href="play/simple.html">去玩一局</a>
+      </div>
+    </div>
+
+    <p style="margin-top:18px;font-size:12.5px;color:var(--dim)">
+      计分口径待确定：当前版本的对局本身不产生分数，榜单具体统计什么（胜场 / 连胜 / 胜率）会在接入对局记录后公布，不用占位规则凑数。
+    </p>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap footer-in">
+    <span>能量豆对战</span>
+    <span class="sep">榜单数据服务器接入后开放</span>
+  </div>
+</footer>
+
+<script src="assets/auth.js"></script>
+<script src="assets/auth-ui.js"></script>
+<script>
+(async function () {
+  const tbody = document.getElementById("rows");
+  const table = document.getElementById("boardTable");
+  const empty = document.getElementById("boardEmpty");
+
+  const fmtDate = iso => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return (d.getMonth() + 1) + "/" + d.getDate() + " " +
+      String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  };
+
+  async function render(key) {
+    const range = key === "today" ? "day" : key;
+
+    let list = [];
+    try {
+      const d = await Auth.getLeaderboard(range);
+      list = (d && d.rows) || [];
+    } catch (e) {
+      list = [];
+    }
+
+    if (!list.length) {
+      table.hidden = true;
+      empty.hidden = false;
+      return;
+    }
+
+    table.hidden = false;
+    empty.hidden = true;
+    tbody.innerHTML = list.map((p, i) => `
+      <tr>
+        <td><span class="rank ${i < 3 ? "r" + (i + 1) : ""}">${i + 1}</span></td>
+        <td><div class="player"><span class="avatar">${(p.nickname || "?").slice(-1)}</span>${p.nickname}</div></td>
+        <td><span class="score">${(p.score || 0).toLocaleString()}</span></td>
+        <td><span class="num">${fmtDate(p.last)}</span></td>
+      </tr>`).join("");
+  }
+
+  document.getElementById("tabs").addEventListener("click", e => {
+    const btn = e.target.closest("button");
+    if (!btn) return;
+    document.querySelectorAll("#tabs button").forEach(b => b.classList.toggle("on", b === btn));
+    render(btn.dataset.key);
+  });
+
+  render("all");
+})();
+</script>
+</body>
+</html>

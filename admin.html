@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理台 · 能量豆对战</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23e8b44a'/><circle cx='16' cy='16' r='7' fill='%231c1305'/></svg>">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">豆</span>
+      <span>能量豆对战</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="leaderboard.html">排行榜</a>
+      <a href="forum.html">讨论区</a>
+    </div>
+    <div class="auth-nav" id="authNav"></div>
+  </div>
+</nav>
+
+<main class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>管理台</h2>
+      <span class="sub">改名、封禁、解封</span>
+    </div>
+
+    <div class="panel" id="statePanel">
+      <div class="empty">
+        <div class="empty-glyph">◌</div>
+        <div class="empty-title" id="stateTitle">正在检查权限…</div>
+        <div class="empty-sub" id="stateSub"></div>
+        <button class="btn btn-primary" id="stateAction" hidden>登录</button>
+      </div>
+    </div>
+
+    <div id="adminPanel" hidden>
+      <div class="admin-toolbar">
+        <input id="search" type="search" placeholder="搜索昵称或邮箱">
+        <button class="btn btn-ghost btn-sm" id="refresh">刷新</button>
+        <span style="font-size:12.5px;color:var(--dim)" id="stat"></span>
+      </div>
+
+      <div class="panel">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th style="width:210px">昵称</th>
+              <th>邮箱</th>
+              <th style="width:110px">注册时间</th>
+              <th style="width:90px">状态</th>
+              <th style="width:200px">操作</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <p style="margin-top:16px;font-size:12.5px;color:var(--dim);line-height:1.8">
+        改名：直接在输入框里改，点「保存」。<br>
+        封禁：封禁后该账号登录会看到封禁提示，且无法再提交成绩；解封即刻恢复。<br>
+        真实权限由数据库策略校验，绕过这个页面直接调接口也改不动别人的资料。
+      </p>
+    </div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<footer>
+  <div class="wrap footer-in">
+    <span>能量豆对战 · 管理台</span>
+    <span class="sep">仅管理员可访问</span>
+  </div>
+</footer>
+
+<script src="assets/auth.js"></script>
+<script src="assets/auth-ui.js"></script>
+<script>
+(function () {
+  const statePanel = document.getElementById("statePanel");
+  const stateTitle = document.getElementById("stateTitle");
+  const stateSub   = document.getElementById("stateSub");
+  const stateBtn   = document.getElementById("stateAction");
+  const adminPanel = document.getElementById("adminPanel");
+  const tbody = document.getElementById("tbody");
+  const stat = document.getElementById("stat");
+  const toastEl = document.getElementById("toast");
+
+  let me = null;
+  let rows = [];
+
+  function toast(msg, bad) {
+    toastEl.textContent = msg;
+    toastEl.className = "toast show" + (bad ? " bad" : "");
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { toastEl.className = "toast"; }, 2200);
+  }
+
+  function stop(text, sub, actionLabel, onAction) {
+    statePanel.hidden = false;
+    adminPanel.hidden = true;
+    stateTitle.textContent = text;
+    stateSub.innerHTML = sub || "";
+    if (actionLabel) {
+      stateBtn.hidden = false;
+      stateBtn.textContent = actionLabel;
+      stateBtn.onclick = onAction;
+    } else {
+      stateBtn.hidden = true;
+    }
+  }
+
+  const fmt = iso => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  };
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, c =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function render() {
+    const q = document.getElementById("search").value.trim().toLowerCase();
+    const list = rows.filter(r =>
+      !q || (r.nickname || "").toLowerCase().includes(q) || (r.email || "").toLowerCase().includes(q));
+
+    const bannedCount = rows.filter(r => r.banned).length;
+    stat.textContent = "共 " + rows.length + " 人，封禁 " + bannedCount + " 人";
+
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:34px;color:var(--dim);font-size:13px">
+        ${rows.length ? "没有匹配的玩家" : "还没有玩家注册"}</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = list.map(r => {
+      const isSelf = me && r.id === me.id;
+      return `
+      <tr data-id="${r.id}" class="${r.banned ? "is-banned" : ""}">
+        <td><input class="name-input" value="${esc(r.nickname)}" maxlength="16" ${isSelf ? "" : ""}></td>
+        <td style="color:var(--muted);font-size:12.5px">${esc(r.email || "—")}${isSelf ? ' <span style="color:var(--dim)">(你)</span>' : ""}</td>
+        <td style="color:var(--dim);font-size:12.5px">${fmt(r.created_at)}</td>
+        <td><span class="state ${r.banned ? "ban" : "ok"}">${r.banned ? "已封禁" : "正常"}</span></td>
+        <td>
+          <div class="row-actions">
+            <button class="btn btn-ghost btn-sm" data-act="rename">保存昵称</button>
+            ${r.banned
+              ? `<button class="btn btn-ok btn-sm" data-act="unban">解封</button>`
+              : `<button class="btn btn-danger btn-sm" data-act="ban" ${isSelf ? "disabled" : ""}>封禁</button>`}
+          </div>
+        </td>
+      </tr>`;
+    }).join("");
+  }
+
+  async function load() {
+    const data = await Auth.adminUsers();
+    rows = (data && data.users) || [];
+    render();
+  }
+
+  async function patch(id, body, okText) {
+    try {
+      await Auth.adminUpdate(id, body);
+      toast(okText);
+      await load();
+    } catch (e) {
+      toast("失败：" + e.message, true);
+    }
+  }
+
+  tbody.addEventListener("click", async e => {
+    const btn = e.target.closest("button[data-act]");
+    if (!btn) return;
+    const tr = btn.closest("tr");
+    const id = tr.dataset.id;
+    const act = btn.dataset.act;
+    const input = tr.querySelector(".name-input");
+
+    if (act === "rename") {
+      const name = input.value.trim();
+      if (!name) return toast("昵称不能为空", true);
+      if (name.length > 16) return toast("昵称最多 16 个字", true);
+      btn.disabled = true;
+      await patch(id, { nickname: name }, "昵称已更新");
+      btn.disabled = false;
+    }
+
+    if (act === "ban") {
+      const reason = prompt("封禁原因（可留空）", "");
+      if (reason === null) return;
+      btn.disabled = true;
+      await patch(id, { banned: true, reason: reason || null }, "已封禁");
+      btn.disabled = false;
+    }
+
+    if (act === "unban") {
+      btn.disabled = true;
+      await patch(id, { banned: false }, "已解封");
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById("search").addEventListener("input", render);
+  document.getElementById("refresh").addEventListener("click", () => load().then(() => toast("已刷新")));
+
+  (async function boot() {
+    let s = null;
+    try { s = await Auth.session(); } catch (e) {}
+    if (!s) {
+      stop("请先登录", "管理台需要管理员账号登录后才能查看。", "登录", () => window.AuthUI.open("login"));
+      return;
+    }
+
+    me = s.user;
+
+    if (!me || me.role !== "admin") {
+      stop("这个账号不是管理员",
+        "当前登录的是 <b>" + esc(me ? me.nickname : "未知") + "</b>。系统里第一个注册的账号会自动成为管理员；如果你不是第一个，请让管理员在管理台里给你开权限。");
+      return;
+    }
+
+    statePanel.hidden = true;
+    adminPanel.hidden = false;
+    await load();
+  })();
+})();
+</script>
+</body>
+</html>

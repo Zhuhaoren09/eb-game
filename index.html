@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>能量豆对战 · 官方站</title>
+<meta name="description" content="能量豆对战 —— 暗黑地牢风格的像素卡牌对战。6 点血、30 回合、30 个技能，同时出牌互相猜。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23e8b44a'/><circle cx='16' cy='16' r='7' fill='%231c1305'/></svg>">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">豆</span>
+      <span>能量豆对战</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html" class="on">首页</a>
+      <a href="leaderboard.html">排行榜</a>
+      <a href="forum.html">讨论区</a>
+    </div>
+    <div class="auth-nav" id="authNav"></div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div class="eyebrow">Dungeon Card Battle</div>
+    <h1>六点血，三十回合，<br><em>谁先算到对方的牌</em></h1>
+    <p>不抽牌、不组牌库。每人六张固定手牌，靠能量豆决定能出什么，在三十回合内把对手打到零血。每回合双方同时出牌，先算到的那个人赢。</p>
+    <div class="hero-actions">
+      <a class="btn btn-primary" href="play/simple.html">立即试玩 →</a>
+      <a class="btn btn-ghost" href="leaderboard.html">查看排行榜</a>
+    </div>
+    <div class="hero-stats">
+      <div><span>6</span><small>初始血量</small></div>
+      <div><span>30</span><small>回合上限</small></div>
+      <div><span>30</span><small>技能数量</small></div>
+      <div><span>2–4</span><small>支持人数</small></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>选择版本</h2>
+        <span class="sub">两个版本共用同一套规则与结算核心</span>
+      </div>
+      <div class="games">
+
+        <article class="game-card">
+          <div class="game-cover">
+            <span class="tag tag-live">可玩</span>
+            <span class="glyph">🜂</span>
+          </div>
+          <div class="game-body">
+            <h3>能量豆对战 · 简约版</h3>
+            <p>单文件网页版，打开即玩。支持人机对战与 2–4 人混战，也可以开房间和朋友联机。</p>
+            <div class="game-meta">
+              <span class="chip">网页版</span>
+              <span class="chip">2–4 人</span>
+              <span class="chip">支持联机</span>
+            </div>
+            <div class="game-actions">
+              <a class="btn btn-primary" href="play/simple.html">开始游戏</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="game-card">
+          <div class="game-cover">
+            <span class="tag tag-soon">待上线</span>
+            <span class="glyph">🜄</span>
+          </div>
+          <div class="game-body">
+            <h3>能量豆对战 · 原版</h3>
+            <p>Godot 引擎的完整版本，包含完整的技能演出与地牢场景。网页包尚未导出，目前仅桌面端可运行。</p>
+            <div class="game-meta">
+              <span class="chip">Godot</span>
+              <span class="chip">桌面版</span>
+              <span class="chip">完整美术</span>
+            </div>
+            <div class="game-actions">
+              <a class="btn btn-ghost" href="play/original.html">查看说明</a>
+            </div>
+          </div>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>排行榜</h2>
+        <span class="sub">按最高分排序</span>
+        <a class="more" href="leaderboard.html">查看完整榜单 →</a>
+      </div>
+      <div class="panel">
+        <div class="notice">
+          <span class="tag tag-live">实时</span>
+          <span>只记录真实对局，没有任何预置数据。</span>
+        </div>
+        <table class="board" id="boardTable">
+          <thead>
+            <tr><th style="width:56px">名次</th><th>玩家</th><th style="width:110px">最高分</th><th style="width:120px">最近对局</th></tr>
+          </thead>
+          <tbody id="top5"></tbody>
+        </table>
+        <div class="empty" id="boardEmpty" hidden>
+          <div class="empty-glyph">◌</div>
+          <div class="empty-title">还没有人上榜</div>
+          <div class="empty-sub">打完第一局，你的名字就会出现在这里</div>
+          <a class="btn btn-primary" href="play/simple.html">去玩一局</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>讨论区</h2>
+        <span class="sub">规则、攻略、反馈</span>
+        <a class="more" href="forum.html">进入讨论区 →</a>
+      </div>
+      <div class="panel">
+        <div class="post-list" id="topPosts"></div>
+        <div class="empty" id="postEmpty" hidden>
+          <div class="empty-glyph">◌</div>
+          <div class="empty-title">还没有人发帖</div>
+          <div class="empty-sub">讨论区开放后，这里会显示玩家的最新话题</div>
+          <a class="btn btn-ghost" href="forum.html">看看讨论区</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer-in">
+    <span>能量豆对战</span>
+    <span class="sep">榜单与讨论只显示真实玩家数据，账号系统接入后开放</span>
+  </div>
+</footer>
+
+<script src="assets/data.js"></script>
+<script src="assets/auth.js"></script>
+<script src="assets/auth-ui.js"></script>
+<script>
+(async function () {
+  const avatarChar = n => (n || "?").slice(-1);
+  const fmtDate = iso => {
+    if (!iso) return "—";
+    const d = new Date(iso);
+    return (d.getMonth() + 1) + "/" + d.getDate() + " " +
+      String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  };
+
+  // ---- 排行榜：真实数据 ----
+  const table = document.getElementById("boardTable");
+  const boardEmpty = document.getElementById("boardEmpty");
+  let rows = [];
+  try {
+    const d = await Auth.getLeaderboard("all");
+    rows = (d && d.rows) || [];
+  } catch (e) {
+    rows = [];
+  }
+
+  if (rows.length) {
+    document.getElementById("top5").innerHTML = rows.slice(0, 5).map((p, i) => `
+      <tr>
+        <td><span class="rank ${i < 3 ? "r" + (i + 1) : ""}">${i + 1}</span></td>
+        <td><div class="player"><span class="avatar">${avatarChar(p.nickname)}</span>${p.nickname}</div></td>
+        <td><span class="score">${(p.score || 0).toLocaleString()}</span></td>
+        <td><span class="num">${fmtDate(p.last)}</span></td>
+      </tr>`).join("");
+  } else {
+    table.hidden = true;
+    boardEmpty.hidden = false;
+  }
+
+  // ---- 讨论 ----
+  const posts = POSTS.slice(0, 3);
+  const postList = document.getElementById("topPosts");
+  const postEmpty = document.getElementById("postEmpty");
+
+  if (posts.length) {
+    postList.innerHTML = posts.map(p => `
+      <a class="post" href="forum.html#post-${p.id}">
+        <div class="post-main">
+          <h4>${p.title}${p.pin ? '<span class="pin">置顶</span>' : ""}</h4>
+          <div class="meta"><b>${p.author}</b><span>${p.time}</span><span>${p.tag}</span></div>
+          <div class="post-excerpt">${p.excerpt}</div>
+        </div>
+        <div class="replies"><strong>${p.replies}</strong>回复</div>
+      </a>`).join("");
+  } else {
+    postList.hidden = true;
+    postEmpty.hidden = false;
+  }
+})();
+</script>
+</body>
+</html>

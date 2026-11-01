@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>讨论区 · 能量豆对战</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23e8b44a'/><circle cx='16' cy='16' r='7' fill='%231c1305'/></svg>">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html">
+      <span class="brand-mark">豆</span>
+      <span>能量豆对战</span>
+    </a>
+    <div class="nav-links">
+      <a href="index.html">首页</a>
+      <a href="leaderboard.html">排行榜</a>
+      <a href="forum.html" class="on">讨论区</a>
+    </div>
+    <div class="auth-nav" id="authNav"></div>
+  </div>
+</nav>
+
+<main class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>讨论区</h2>
+      <span class="sub">规则、攻略、反馈</span>
+      <button class="btn btn-ghost disabled" disabled title="账号系统接入后开放">发帖</button>
+    </div>
+
+    <div class="panel">
+      <div class="notice">
+        <span class="tag tag-live">只读</span>
+        <span>这里只显示玩家真实发布的帖子，没有任何预置内容。</span>
+      </div>
+      <div class="post-list" id="list"></div>
+      <div class="empty" id="listEmpty" hidden>
+        <div class="empty-glyph">◌</div>
+        <div class="empty-title">还没有人发帖</div>
+        <div class="empty-sub">讨论区目前只读。<br>发帖与回复会在账号系统接入后开放。</div>
+        <a class="btn btn-ghost" href="play/simple.html">先去玩一局</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="modal-mask" id="mask">
+  <div class="modal" role="dialog" aria-modal="true">
+    <button class="modal-close" id="close" aria-label="关闭">×</button>
+    <h3 id="mTitle"></h3>
+    <div class="meta" id="mMeta"></div>
+    <div class="body" id="mBody"></div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap footer-in">
+    <span>能量豆对战</span>
+    <span class="sep">回复功能待后端接入后开放</span>
+  </div>
+</footer>
+
+<script src="assets/data.js"></script>
+<script>
+(function () {
+  const list = document.getElementById("list");
+  const mask = document.getElementById("mask");
+  const mTitle = document.getElementById("mTitle");
+  const mMeta  = document.getElementById("mMeta");
+  const mBody  = document.getElementById("mBody");
+
+  const sorted = [...POSTS].sort((a, b) => (b.pin ? 1 : 0) - (a.pin ? 1 : 0) || a.id - b.id);
+  const listEmpty = document.getElementById("listEmpty");
+
+  if (sorted.length) {
+    list.innerHTML = sorted.map(p => `
+      <div class="post" data-id="${p.id}" id="post-${p.id}">
+        <div class="post-main">
+          <h4>${p.title}${p.pin ? '<span class="pin">置顶</span>' : ""}</h4>
+          <div class="meta"><b>${p.author}</b><span>${p.time}</span><span>${p.tag}</span></div>
+          <div class="post-excerpt">${p.excerpt}</div>
+        </div>
+        <div class="replies"><strong>${p.replies}</strong>回复</div>
+      </div>`).join("");
+  } else {
+    list.hidden = true;
+    listEmpty.hidden = false;
+  }
+
+  function open(id) {
+    const p = POSTS.find(x => x.id === Number(id));
+    if (!p) return;
+    mTitle.textContent = p.title;
+    mMeta.textContent = `${p.author} · ${p.time} · ${p.tag} · ${p.replies} 条回复`;
+    mBody.textContent = p.body;
+    mask.classList.add("open");
+  }
+
+  function close() {
+    mask.classList.remove("open");
+    history.replaceState(null, "", location.pathname);
+  }
+
+  list.addEventListener("click", e => {
+    const row = e.target.closest(".post");
+    if (row) open(row.dataset.id);
+  });
+
+  document.getElementById("close").addEventListener("click", close);
+  mask.addEventListener("click", e => { if (e.target === mask) close(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") close(); });
+
+  if (location.hash.startsWith("#post-")) open(location.hash.slice(6));
+})();
+</script>
+<script src="assets/auth.js"></script>
+<script src="assets/auth-ui.js"></script>
+</body>
+</html>
